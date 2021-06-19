@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {HttpClientModule} from '@angular/common/http'
+import {HttpClientModule,HTTP_INTERCEPTORS} from '@angular/common/http'
 import { AddBookComponent } from './add-book/add-book.component';
 import { AddReaderComponent } from './add-reader/add-reader.component';
 import { AppComponent } from './app.component';
@@ -11,6 +11,9 @@ import { EditBookComponent } from './edit-book/edit-book.component';
 import { EditReaderComponent } from './edit-reader/edit-reader.component';
 import { DataService } from './core/data.service';
 import { LoggerService } from './core/logger.service';
+import { AddHeaderService } from './core/add-header.service';
+import { LogResponseService } from './core/log-response.service';
+import { CachInterceptorService } from './core/cach-interceptor.service';
 
 @NgModule({
   declarations: [
@@ -33,6 +36,10 @@ import { LoggerService } from './core/logger.service';
     //     log:(message:string)=>{console.log(message)},
     //     error:(message:string)=>{console.log(message);}
     // }},
+    {provide:HTTP_INTERCEPTORS,useClass:AddHeaderService,multi:true},
+    {provide:HTTP_INTERCEPTORS,useClass:LogResponseService,multi:true},
+    {provide:HTTP_INTERCEPTORS,useClass:CachInterceptorService,multi:true},
+
     LoggerService,
     DataService
   ],

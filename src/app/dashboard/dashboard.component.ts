@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DataService } from 'app/core/data.service';
 import { LoggerService } from 'app/core/logger.service';
 import { allBooks, allReaders } from 'app/data';
@@ -17,10 +18,20 @@ export class DashboardComponent implements OnInit {
   allReaders: Reader[] ;
   mostPopularBook: Book ;
 
-  constructor(private logger:LoggerService,private data:DataService) { }
+  constructor(private logger:LoggerService,
+                private data:DataService,
+                private router:ActivatedRoute) { }
 
   ngOnInit() {
-    this.allBooks=this.data.getAllBooks();
+
+    let readerBooksData=this.router.snapshot.data["bookResolved"];
+
+    if(readerBooksData instanceof BookError){
+      console.log("There is an Error!");
+    }else{
+      this.allBooks=readerBooksData
+    }
+
    this.data.getAllReaders()
        .subscribe(
          (data :Reader[] |BookError)=> this.allReaders=<Reader[]>data,
@@ -31,7 +42,15 @@ export class DashboardComponent implements OnInit {
   }
 
   deleteBook(bookID: number): void {
-    console.warn(`Delete book not yet implemented (bookID: ${bookID}).`);
+   this.data.deleteBook(bookID)
+       .subscribe(
+          (bookData:void)=>{
+            let index:number=this.allBooks.findIndex(book=>book.bookID===bookID);
+            this.allBooks.splice(index,0);
+          },
+          (error)=>console.log("There is an Error"+error)
+       )
+
   }
 
   deleteReader(readerID: number): void {

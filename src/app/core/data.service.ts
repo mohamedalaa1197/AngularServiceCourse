@@ -3,11 +3,12 @@ import { allBooks, allReaders } from 'app/data';
 import { Book } from 'app/models/book';
 import { Reader } from 'app/models/reader';
 import {Observable} from 'rxjs';
-import {HttpClient, HttpErrorResponse, ɵHttpInterceptingHandler} from '@angular/common/http'
+import {HttpClient, HttpErrorResponse, HttpHeaders, ɵHttpInterceptingHandler} from '@angular/common/http'
 import { LoggerService } from './logger.service';
 import { BookError } from 'app/models/bookErrorTracker';
-import {catchError} from 'rxjs/operators'
+import {catchError,map,tap} from 'rxjs/operators'
 import {throwError}from 'rxjs'
+import { oldBook } from 'app/models/oldBook';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +21,7 @@ export class DataService {
   constructor(private logger:LoggerService,private http:HttpClient) { }
 
   getAllReaders():Observable<Reader[] | BookError>{
-    return this.http.get<Reader[]>('api/Reader')
+    return this.http.get<Reader[]>('/api/readers')
                .pipe(catchError(this.Errorhandler))
 
   }
@@ -39,17 +40,50 @@ export class DataService {
      return this.mostPopularBook=book;
   }
 
-  getreaderById(id:number):Reader{
-    return allReaders.find(reader=>reader.readerID===id);
+  getreaderById(id:number):Observable<Reader>{
+    return this.http.get<Reader>(`/api/Reader/${id}`)
   }
 
 
-  getAllBooks():Book[]{
-    return allBooks;
+  getAllBooks():Observable<Book[]>{
+
+    return this.http.get<Book[]>("/api/books",{
+      headers:new HttpHeaders({
+        'Accept':'application/json',
+        'Authorizaton':'my-token'
+      })
+    });
   }
 
+  getOldBook(oldID:number):Observable<oldBook>{
 
-  getBookById(id:number):Book{
-    return allBooks.find(book=>book.bookID===id);
+    return this.http.get<Book>(`/api/books/${oldID}`)
+               .pipe(
+                  map(b => <oldBook>{
+                    title:b.title,
+                    publicationYear:b.publicationYear
+                  }),
+                  tap(classicBook=>console.log(classicBook))
+               );
+  }
+
+  addBook(newBook:Book):Observable<Book>{
+    return this.http.post<Book>("/api/books",newBook,{
+      headers:{
+        "Content-Type":"application/json"
+      }
+    })
+  };
+
+  updateBook(updatedBook:Book):Observable<void>{
+    return this.http.put<void>(`/api/books/${updatedBook.bookID}`,updatedBook)
+  }
+
+  deleteBook(deletedBookID:number):Observable<void>{
+    return this.http.delete<void>(`/api/books/${deletedBookID}`);
+  }
+
+  getBookById(id:number):Observable< Book>{
+    return this.http.get<Book>(`/api/book/${id}`);
   }
 }
